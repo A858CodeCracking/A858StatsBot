@@ -58,6 +58,11 @@ Install the bot
 The first step is to create a configuration file `.a858rc` (see next section
 for details).
 
+Locate the script `a858statsbot.py` (the main program) in the bot's home
+folder.  This script must be able to import `a858stats.py` and `a858utils.py`,
+so be sure they are in a folder included in the PYTHONPATH or the same folder
+as the main script.
+
 The bot is running on a Raspberry Pi with Raspbian, so I also wrote a Debian
 init script to run it as a daemon.  First of all create the user
 `a858statsbot`.  Copy the script `a858statsbot` in `/etc/init.d` and make it
@@ -68,6 +73,12 @@ executable with (as root):
 and, in order to make it run on startup, (as root):
 
     chmod update-rc.d a858statsbot defaults
+
+### Note about the filenames
+
+Yeah, I know, I could've thought of better names for the scripts: this whole
+`a858stats*` thing may seem a little confusing.  But, well, what's done is
+done, my code my rules :P
 
 Config file
 -----------
