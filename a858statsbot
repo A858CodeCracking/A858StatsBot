@@ -1,0 +1,54 @@
+#!/bin/bash
+# /etc/init.d/a858statsbot
+
+### BEGIN INIT INFO
+# Provides:             a858statsbot
+# Required-Start:       $remote_fs $syslog $network
+# Required-Stop:        $remote_fs $syslog $network
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    A858 Statistics Bot for Reddit
+# Description:          Posts A858 auto-analysis data as A858 post comment on Reddit
+### END INIT INFO
+
+DIR=/home/a858statsbot
+DAEMON=$DIR/a858statsbot.py
+DAEMON_NAME=a858statsbot
+DAEMON_USER=a858statsbot
+PIDFILE=/var/run/$DAEMON_NAME.pid
+RETRY=10
+
+. /lib/lsb/init-functions
+
+daemon_start () {
+    log_daemon_msg "Starting system $DAEMON_NAME daemon"
+    start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --user $DAEMON_USER --chuid $DAEMON_USER --startas $DAEMON
+    log_end_msg $?
+}
+daemon_stop () {
+    log_daemon_msg "Stopping system $DAEMON_NAME daemon"
+    start-stop-daemon --stop --pidfile $PIDFILE --retry $RETRY
+    log_end_msg $?
+}
+
+case "$1" in
+    start)
+        daemon_start
+        ;;
+    stop)
+        daemon_stop
+        ;;
+    restart|reload|force-reload)
+        daemon_stop
+        daemon_start
+        ;;
+    status)
+        status_of_proc "$DAEMON_NAME" "$DAEMON" && exit 0 || exit $?
+        ;;
+    *)
+        echo "Usage: /etc/init.d/$DAEMON_NAME {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

@@ -1,0 +1,5 @@
+*~
+*.sw[nop]
+__pycache__
+*.pyc
+.a858cache

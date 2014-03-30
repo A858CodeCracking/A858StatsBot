@@ -1,0 +1,18 @@
+### Example config file
+
+delay           30
+username        lebotusername
+password        lepassword
+useragent       lebotusername/version by leauthor
+footer          [About+Info](http://example.com) - Love
+author          leauthor
+
+### PMs forwarding
+
+smtp_server     localhost
+smtp_port       587
+smtp_tls        False
+email_to        author@example.com
+email_from      myself@example.com
+email_username
+email_password
