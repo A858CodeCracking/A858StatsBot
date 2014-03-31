@@ -60,7 +60,7 @@ for details).
 
 Locate the script `a858statsbot.py` (the main program) in the bot's home
 folder.  This script must be able to import `a858stats.py` and `a858utils.py`,
-so be sure they are in a folder included in the PYTHONPATH or the same folder
+so make sure they are in a folder included in the PYTHONPATH or the same folder
 as the main script.
 
 The bot is running on a Raspberry Pi with Raspbian, so I also wrote a Debian
@@ -69,6 +69,10 @@ init script to run it as a daemon.  First of all create the user
 executable with (as root):
 
     chmod +x /etc/init.d/a858statsbot
+
+Then, to run it (as root):
+
+    /etc/init.d/a858statsbot start
 
 and, in order to make it run on startup, (as root):
 

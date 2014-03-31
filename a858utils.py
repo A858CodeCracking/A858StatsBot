@@ -5,7 +5,7 @@ This module provides the following utility classes:
     * Mailer
 and the following helper functions:
     * expand
-    * get_fortune
+    * get_quote
 """
 
 import pickle
