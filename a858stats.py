@@ -18,9 +18,9 @@ if sys.version_info.major < 3:
 REGEXES = {"length": r"(Length: (\d+) bytes \(= \d+ \+ \d+ \* \d+\))",
            "distrib": r"(Statistical distribution: (.+ \(.+ stddevs\)))",
            "time": (r"(Time in post title: "
-                    "(\w{3} \w{3} \d{2} \d{2}:\d{2}:\d{2} \d{4}))"),
+                    "(\w{3} \w{3} \s?\d{1,2} \d{2}:\d{2}:\d{2} \d{4}))"),
            "posted": (r"(Posted to Reddit: "
-                      "(\w{3} \w{3} \d{2} \d{2}:\d{2}:\d{2} \d{4} UTC))"),
+                      "(\w{3} \w{3} \s?\d{1,2} \d{2}:\d{2}:\d{2} \d{4} UTC))"),
            "delay": r"(Post delay: (\d+) seconds)",
            "timezone": r"Identified time zone:",
            "mimetype": r"(File type \(MIME\): ([^<]*))"}
