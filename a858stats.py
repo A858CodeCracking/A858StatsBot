@@ -8,6 +8,7 @@ the A858 auto-analysis site (a858.soulsphere.org).
 
 import re
 import sys
+import datetime
 import requests
 from bs4 import BeautifulSoup as bs
 
@@ -17,8 +18,6 @@ if sys.version_info.major < 3:
 
 REGEXES = {"length": r"(Length: (\d+) bytes \(= \d+ \+ \d+ \* \d+\))",
            "distrib": r"(Statistical distribution: (.+ \(.+ stddevs\)))",
-           "time": (r"(Time in post title: "
-                    "(\w{3} \w{3} \s?\d{1,2} \d{2}:\d{2}:\d{2} \d{4}))"),
            "posted": (r"(Posted to Reddit: "
                       "(\w{3} \w{3} \s?\d{1,2} \d{2}:\d{2}:\d{2} \d{4} UTC))"),
            "delay": r"(Post delay: (\d+) seconds)",
@@ -51,7 +50,8 @@ class LastPostStats(object):
         """Parse the original HTML."""
         self.length = re_search(REGEXES["length"], self._html)
         self.distrib = re_search(REGEXES["distrib"], self._html)
-        self.time = re_search(REGEXES["time"], self._html)
+        self.title = self._soup.h3.string
+        self.time = "Time in post title: {}".format(self._strftime(self.title))
         self.posted = re_search(REGEXES["posted"], self._html)
         self.delay = re_search(REGEXES["delay"], self._html)
         self.mime = re_search(REGEXES["mimetype"], self._html)
@@ -61,6 +61,10 @@ class LastPostStats(object):
         self.tz_str = "{text} {tz}".format(text=REGEXES["timezone"],
                                            tz=self._tz.string)
         self.tz_int = int(self._tz.string[3:])
+
+    def _strftime(self, timestamp):
+        time = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
+        return time.strftime("%c")
 
     def __str__(self):
         msg = ("{length}\n\n"
