@@ -78,6 +78,13 @@ and, in order to make it run on startup, (as root):
 
     chmod update-rc.d a858statsbot defaults
 
+The last step is to allow the bot to write logs in `/var/log/`.  To do so, make
+a directory in `/var/log` as root and change its ownership to allow writing
+from the bot's user:
+
+    mkdir /var/log/a858statsbot
+    chown a858statsbot:a858statsbot /var/log/a858statsbot
+
 ### Note about the filenames
 
 Yeah, I know, I could've thought of better names for the scripts: this whole

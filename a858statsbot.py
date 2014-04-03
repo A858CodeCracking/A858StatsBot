@@ -9,12 +9,19 @@
 # - improve PMs forwarding
 
 import praw
+import logging
+import logging.config
 import a858stats
 import a858utils
 from time import sleep
 
 RC_FILE = "~/.a858rc"
 CACHE_FILE = "~/.a858cache"
+LOG_CONF_FILE = "~/a858sblogger.conf"
+
+# Logger initialization
+logging.config.fileConfig(a858utils.expand(LOG_CONF_FILE))
+logger = logging.getLogger(__name__)
 
 
 class Bot(object):
@@ -27,11 +34,14 @@ class Bot(object):
     def __init__(self):
         # Load the configuration file
         self.configs = self.parse_rc_file(self.rc_file)
+        logger.debug("Configuration file loaded")
         # Initialize PRAW and connect to Reddit
         self.r = praw.Reddit(self.configs["useragent"])
         self.r.login(self.configs["username"], self.configs["password"])
+        logger.debug("Connected to Reddit")
         # Initialize the cache
         self.cache = a858utils.Cache(a858utils.expand(self.cache_file))
+        logger.debug("Cache initialized")
         # Set to False to break the main loop
         self.running = True
 
@@ -79,6 +89,9 @@ class Bot(object):
                         self.configs["email_to"],
                         " PM from {}: {}".format(author, subject),
                         body)
+            logger.debug("PM from {} forwarded".format(author))
+        except Exception as err:
+            logger.error(err)
         finally:
             m.disconnect()
 
@@ -95,13 +108,15 @@ class Bot(object):
             if ("ignore_from" in self.configs.keys() and
                     author.lower() in
                     self.configs["ignore_from"].lower().split()):
+                logger.debug("Ignoring PM from {}".format(author))
                 m.mark_as_read()
                 continue
             subject = m.subject
             body = m.body
-            # Must check for errors
+            logger.debug("Forwarding PM from {}".format(author))
             self._forward_pm(author, subject, body)
             m.mark_as_read()
+            logger.debug("PM from {} marked as read".format(author))
 
     def run(self):
         """Main loop."""
@@ -109,20 +124,25 @@ class Bot(object):
             self.check_pms()
 
             last_stat = a858stats.LastPostStats()
+            logger.debug("Parsed stats for post id {}".format(last_stat.id36))
 
             if last_stat.id36 in self.cache:
+                logger.debug("Post in cache, sleeping...")
                 sleep(int(self.configs["delay"]))
                 continue
 
             last_post = self.r.get_submission(submission_id=last_stat.id36)
+            logger.debug("Reddit post with id {} found".format(last_stat.id36))
 
             comment = self._build_comment(str(last_stat),
                                           self.configs["footer"])
 
             last_post.add_comment(comment)
+            logger.debug("Comment sent")
 
             self.cache.add(last_stat.id36)
             self.cache.save()
+            logger.debug("Post id cached")
 
 if __name__ == "__main__":
     Bot().run()
