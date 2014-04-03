@@ -23,10 +23,14 @@ class Bot(object):
     cache_file = CACHE_FILE
 
     def __init__(self):
+        # Load the configuration file
         self.configs = self.parse_rc_file(self.rc_file)
+        # Initialize PRAW and connect to Reddit
         self.r = praw.Reddit(self.configs["useragent"])
         self.r.login(self.configs["username"], self.configs["password"])
+        # Initialize the cache
         self.cache = a858utils.Cache(a858utils.expand(self.cache_file))
+        # Set to False to break the main loop
         self.running = True
 
     @staticmethod
@@ -85,18 +89,24 @@ class Bot(object):
         pms = self.r.get_unread()
         for m in pms:
             author = m.author.name
+            # Usernames are case sensitive
+            if ("ignore_from" in self.configs.keys() and
+                    author.lower() in
+                    self.configs["ignore_from"].lower().split()):
+                m.mark_as_read()
+                continue
             subject = m.subject
             body = m.body
-            # must check for errors
+            # Must check for errors
             self._forward_pm(author, subject, body)
             m.mark_as_read()
 
     def run(self):
         """Main loop."""
         while self.running:
-            last_stat = a858stats.LastPostStats()
-
             self.check_pms()
+
+            last_stat = a858stats.LastPostStats()
 
             if last_stat.id36 in self.cache:
                 sleep(int(self.configs["delay"]))

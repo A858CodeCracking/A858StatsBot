@@ -9,6 +9,7 @@ author          leauthor
 
 ### PMs forwarding
 
+ignore_from     Unidan autowikibot
 smtp_server     localhost
 smtp_port       587
 smtp_tls        False

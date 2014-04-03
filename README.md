@@ -91,11 +91,14 @@ This file (`.a858rc`) must be placed in the bot user's home folder.
 
 The file structure is simple:
 
-    python_var      value of the python var
-    # lines beginning with '#' or empty lines are ignored
-    whitespaces     after the variable and before the value are stripped
+    python_variable value of the python variable
 
-### Values
+    # lines beginning with '#' or empty lines are ignored
+     # stuff like this is ignored too
+
+    whitespaces     after the variable name and before the value are stripped
+
+### Keys
 
     delay           seconds to wait before checking for new data
     username        reddit bot username
@@ -103,6 +106,7 @@ The file structure is simple:
     useragent       reddit bot useragent
     footer          comment footer
     author          the bot author
+    ignore_from     ignore PMs from these usernames (space separated list)
     smtp_server     smtp server address
     smtp_port       smtp port
     smtp_tls        True or False
