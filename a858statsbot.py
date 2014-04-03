@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright: this file has been released into the public domain.
+
 # TODO:
 # - multithreading
 # - docs

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Copyright: this file has been released into the public domain.
+
 """A858 statistics.
 
 This module provides the class LastPostStats which parses the data from

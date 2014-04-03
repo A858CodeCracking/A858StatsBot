@@ -1,3 +1,5 @@
+# Copyright: this file has been released in the public domain.
+
 """A858 utilities.
 
 This module provides the following utility classes:

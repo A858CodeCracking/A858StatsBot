@@ -124,6 +124,13 @@ a pull request.
 The code in the pull requests must abide by [PEP8][pep8] and by
 [PEP257][pep257]: `flake8` must pass without errors/warnings.
 
+License
+-------
+
+This software is released in the public domain.
+
+See `UNLICENSED` for details.
+
 [analysis]: http://a858.soulsphere.org/
 [ua858]: http://www.reddit.com/u/A858DE45F56D9BC9/
 [solving]: http://www.reddit.com/r/Solving_A858/
