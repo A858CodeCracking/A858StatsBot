@@ -129,7 +129,7 @@ License
 
 This software is released in the public domain.
 
-See `UNLICENSED` for details.
+See `UNLICENSE` for details.
 
 [analysis]: http://a858.soulsphere.org/
 [ua858]: http://www.reddit.com/u/A858DE45F56D9BC9/
