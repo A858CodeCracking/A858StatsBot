@@ -58,11 +58,13 @@ class LastPostStats(object):
         self.delay = re_search(REGEXES["delay"], self._html)
         self.mime = re_search(REGEXES["mimetype"], self._html)
         self.id36 = self._soup.a["name"]
-        self._tz = self._soup.find(text=re.compile(REGEXES["timezone"])).next
-        self.tz_link = self._tz["href"]
-        self.tz_str = "{text} {tz}".format(text=REGEXES["timezone"],
-                                           tz=self._tz.string)
-        self.tz_int = int(self._tz.string[3:])
+        self._tz_title = REGEXES["timezone"]
+        self._tz = self._soup.find(text=re.compile(self._tz_title)).next
+        self.tz_wiki_url = self._tz["href"]
+        self.tz_str = self._tz.string
+        self.tz_full = "{text} {tz}".format(text=self._tz_title,
+                                            tz=self.tz_str)
+        self.tz_int = int(self.tz_str[3:])
 
     def _strftime(self, timestamp):
         time = datetime.datetime.strptime(timestamp, "%Y%m%d%H%M")
@@ -73,15 +75,16 @@ class LastPostStats(object):
                "{distrib}\n\n"
                "{time}\n\n"
                "{posted}\n\n"
-               "[{tz_str}]({tz_link})\n\n"
+               "{tz_title} [{tz_str}]({tz_url})\n\n"
                "{delay}\n\n"
                "{mimetype}\n"
                ).format(length=self.length,
                         distrib=self.distrib,
                         time=self.time,
                         posted=self.posted,
+                        tz_title=self._tz_title,
                         tz_str=self.tz_str,
-                        tz_link=self.tz_link,
+                        tz_url=self.tz_wiki_url,
                         delay=self.delay,
                         mimetype=self.mime)
         return msg
