@@ -145,4 +145,7 @@ class Bot(object):
             logger.debug("Post id cached")
 
 if __name__ == "__main__":
-    Bot().run()
+    try:
+        Bot().run()
+    except Exception as exc:
+        logger.exception(exc)
