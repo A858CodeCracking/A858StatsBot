@@ -1,10 +1,17 @@
-# Copyright: this file has been released in the public domain.
+# Copyright: this file has been released into the public domain.
 
 """A858 utilities.
 
 This module provides the following utility classes:
     * Cache
     * Mailer
+the exception classes:
+    * ConfigFileError(Exception)
+    * MailError(Exception)
+    * ConnectionError(MailError)
+    * TLSError(MailError)
+    * AuthenticationError(MailError)
+    * SendEmailError(MailError)
 and the following helper functions:
     * expand
     * get_quote
@@ -44,24 +51,52 @@ def sup(text):
     return msg.rstrip()
 
 
+def parse_rc_file(rc_file):
+    """Parse a config file and return a dictionary."""
+    configs = []
+    try:
+        with open(expand(rc_file), "r") as rc:
+            l = rc.readlines()
+    except (IOError, FileNotFoundError) as err:
+        raise ConfigFileError(err)
+    for i in l:
+        if i == "\n" or i.lstrip()[0] == "#":
+            continue
+        c = i.rstrip().split(None, 1)
+        if len(c) == 1:
+            c.append(None)
+        configs.append(c)
+    return dict(configs)
+
+
 # Classes
 
-class ConnectionError(Exception):
+class ConfigFileError(Exception):
+    # Config file not found
+    pass
+
+
+class MailError(Exception):
+    # Base mail exception
+    pass
+
+
+class ConnectionError(MailError):
     # Handle error related to smtplib.SMTP()
     pass
 
 
-class TLSError(Exception):
+class TLSError(MailError):
     # Handle error related to SMTP.starttls()
     pass
 
 
-class AuthenticationError(Exception):
+class AuthenticationError(MailError):
     # Handle error related to SMTP.login()
     pass
 
 
-class SendEmailError(Exception):
+class SendEmailError(MailError):
     # Handle error related to SMTP.sendmail() or SMTP.send_message()
     pass
 

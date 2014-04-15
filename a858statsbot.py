@@ -14,6 +14,7 @@ import logging.config
 import a858stats
 import a858utils
 from time import sleep
+from requests.exceptions import HTTPError
 
 RC_FILE = "~/.a858rc"
 CACHE_FILE = "~/.a858cache"
@@ -24,41 +25,65 @@ logging.config.fileConfig(a858utils.expand(LOG_CONF_FILE))
 logger = logging.getLogger(__name__)
 
 
+def handle_http_error(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except HTTPError as err:
+            logger.error("HTTP error: {}".format(err))
+    return wrapper
+
+
 class Bot(object):
 
     """Main bot class."""
 
-    rc_file = RC_FILE
     cache_file = CACHE_FILE
 
-    def __init__(self):
-        # Load the configuration file
-        self.configs = self.parse_rc_file(self.rc_file)
-        logger.debug("Configuration file loaded")
+    def __init__(self, configs):
+        self._load_configs(configs)
         # Initialize PRAW and connect to Reddit
-        self.r = praw.Reddit(self.configs["useragent"])
-        self.r.login(self.configs["username"], self.configs["password"])
-        logger.debug("Connected to Reddit")
+        logger.debug("Connecting to Reddit")
+        self._init_praw()
         # Initialize the cache
+        logger.debug("Initializing cache")
         self.cache = a858utils.Cache(a858utils.expand(self.cache_file))
-        logger.debug("Cache initialized")
         # Set to False to break the main loop
         self.running = True
 
-    @staticmethod
-    def parse_rc_file(rc_file):
-        """Parse a config file and return a dictionary."""
-        configs = []
-        with open(a858utils.expand(rc_file), "r") as rc:
-            l = rc.readlines()
-        for i in l:
-            if i == "\n" or i.lstrip()[0] == "#":
-                continue
-            c = i.rstrip().split(None, 1)
-            if len(c) == 1:
-                c.append(None)
-            configs.append(c)
-        return dict(configs)
+    def _load_configs(self, configs):
+        self.delay = configs["delay"]
+        self.signature = configs["footer"]
+        # Reddit config
+        self.useragent = configs["useragent"]
+        self.username = configs["username"]
+        self.password = configs["password"]
+        # PMs
+        if ("ignore_from" in configs.keys()):
+            self.ignore_from = configs["ignore_from"].lower().split()
+        else:
+            self.ignore_from = []
+        # Email config
+        if ("email_username" in configs.keys() and
+                configs["email_username"]):
+            self.email_username = configs["email_username"]
+            self.email_password = configs["email_password"]
+        else:
+            self.email_username = ""
+            self.email_password = ""
+        self.email_from = configs["email_from"]
+        self.email_to = configs["email_to"]
+        if ("smtp_tls" in configs.keys() and configs["smtp_tls"]):
+            self.smtp_tls = configs["smtp_tls"]
+        else:
+            self.smtp_tls = False
+        self.smtp_server = configs["smtp_server"]
+        self.smtp_port = configs["smtp_port"]
+
+    @handle_http_error
+    def _init_praw(self):
+        self.r = praw.Reddit(self.useragent)
+        self.r.login(self.username, self.password)
 
     def _build_comment(self, post_data, footer_info):
         """Return a string."""
@@ -75,22 +100,20 @@ class Bot(object):
 
     def _forward_pm(self, author, subject, body):
         """Send an email to the bot author with the received PM."""
-        m = a858utils.Mailer(self.configs["smtp_server"],
-                             self.configs["smtp_port"],
-                             bool(self.configs["smtp_tls"]))
-        m.connect()
+        m = a858utils.Mailer(self.smtp_server,
+                             self.smtp_port,
+                             bool(self.smtp_tls))
         try:
-            # email_username config exists and is not None
-            if ("email_username" in self.configs.keys() and
-                    self.configs["email_username"]):
-                m.auth(self.configs["email_username"],
-                       self.configs["email_password"])
-            m.send_mail(self.configs["email_from"],
-                        self.configs["email_to"],
+            m.connect()
+            # email_username key exists and its value is not None
+            if self.email_username:
+                m.auth(self.email_username, self.email_password)
+            m.send_mail(self.email_from,
+                        self.email_to,
                         " PM from {}: {}".format(author, subject),
                         body)
             logger.debug("PM from {} forwarded".format(author))
-        except Exception as err:
+        except a858utils.MailError as err:
             logger.error(err)
         finally:
             m.disconnect()
@@ -99,15 +122,18 @@ class Bot(object):
         """Stop the main loop."""
         self.running = False
 
+    @property
+    @handle_http_error
+    def pms(self):
+        return self.r.get_unread()
+
+    @handle_http_error
     def check_pms(self):
         """Check for unread PMs on the bot's account."""
-        pms = self.r.get_unread()
-        for m in pms:
+        for m in self.pms:
             author = m.author.name
             # Usernames are case sensitive
-            if ("ignore_from" in self.configs.keys() and
-                    author.lower() in
-                    self.configs["ignore_from"].lower().split()):
+            if author.lower() in self.ignore_from:
                 logger.debug("Ignoring PM from {}".format(author))
                 m.mark_as_read()
                 continue
@@ -117,6 +143,14 @@ class Bot(object):
             self._forward_pm(author, subject, body)
             m.mark_as_read()
             logger.debug("PM from {} marked as read".format(author))
+
+    @handle_http_error
+    def get_submissio(self, submission_id):
+        return self.r.get_submission(submission_id=submission_id)
+
+    @handle_http_error
+    def post_comment(self, r_submission, text):
+        r_submission.add_comment(text)
 
     def run(self):
         """Main loop."""
@@ -128,24 +162,31 @@ class Bot(object):
 
             if last_stat.id36 in self.cache:
                 logger.debug("Post in cache, sleeping...")
-                sleep(int(self.configs["delay"]))
+                sleep(int(self.delay))
                 continue
 
-            last_post = self.r.get_submission(submission_id=last_stat.id36)
+            last_post = self.get_submission(last_stat.id36)
             logger.debug("Reddit post with id {} found".format(last_stat.id36))
 
-            comment = self._build_comment(str(last_stat),
-                                          self.configs["footer"])
+            comment = self._build_comment(str(last_stat), self.signature)
 
-            last_post.add_comment(comment)
-            logger.debug("Comment sent")
+            logger.debug("Posting comment")
+            self.post_comment(last_post, comment)
 
+            logger.debug("Caching post ID")
             self.cache.add(last_stat.id36)
             self.cache.save()
-            logger.debug("Post id cached")
 
 if __name__ == "__main__":
+    import sys
+    logger.debug("Loading configuration file")
     try:
-        Bot().run()
-    except Exception as exc:
-        logger.exception(exc)
+        configs = a858utils.parse_rc_file(RC_FILE)
+    except a858utils.ConfigFileError as err:
+        logger.critical(err)
+        sys.exit(1)
+    try:
+        Bot(configs).run()
+    except Exception as err:
+        logger.exception(err)
+        sys.exit(1)
