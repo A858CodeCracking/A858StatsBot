@@ -176,6 +176,9 @@ class Mailer(object):
             raise SendEmailError(err)
 
     def disconnect(self):
-        self.server.quit()
+        try:
+            self.server.quit()
+        except:
+            pass
 
     close = disconnect
