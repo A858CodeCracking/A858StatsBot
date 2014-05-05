@@ -152,12 +152,18 @@ class Bot(object):
     def post_comment(self, r_submission, text):
         r_submission.add_comment(text)
 
+    def get_last_stat(self):
+        return a858stats.LastPostStats()
+
     def run(self):
         """Main loop."""
         while self.running:
             self.check_pms()
-
-            last_stat = a858stats.LastPostStats()
+            try:
+                last_stat = self.get_last_stat()
+            except Exception as err:
+                logger.error(err)
+                continue
             logger.debug("Parsed stats for post id {}".format(last_stat.id36))
 
             if last_stat.id36 in self.cache:
