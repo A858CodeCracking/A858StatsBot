@@ -88,7 +88,8 @@ class Bot(object):
     def _build_comment(self, post_data, footer_info):
         """Return a string."""
         # Get a random quote from the Internet
-        quote = a858utils.get_quote()
+        raw_quote = a858utils.get_quote()
+        quote = raw_quote.encode("ascii", "ignore").replace("(", "\(")
         footer = ("{info}\n\n"
                   "^QOTPost: *{qotp}*").format(info=a858utils.sup(footer_info),
                                                qotp=a858utils.sup(quote))
@@ -150,10 +151,10 @@ class Bot(object):
 
     @handle_http_error
     def post_comment(self, r_submission, text):
-        r_submission.add_comment(text)
 
     def get_last_stat(self):
         return a858stats.LastPostStats()
+        r_submission.add_comment(text)
 
     def run(self):
         """Main loop."""
@@ -164,6 +165,7 @@ class Bot(object):
             except Exception as err:
                 logger.error(err)
                 continue
+            last_stat = a858stats.LastPostStats()
             logger.debug("Parsed stats for post id {}".format(last_stat.id36))
 
             if last_stat.id36 in self.cache:
